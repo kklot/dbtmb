@@ -8,8 +8,12 @@ Authors@R:
            email = "first.last@example.com",
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
-Depends: TMB, RcppEigen, ktools
-LinkingTo: TMB, RcppEigen, ktools
+LinkingTo: 
+  TMB, 
+  RcppEigen, 
+  ktools
+Remotes:
+    kklot/ktools  
 License: What license it uses
 Encoding: UTF-8
 LazyData: true
