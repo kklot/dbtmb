@@ -16,6 +16,7 @@ Type objective_function<Type>::operator() ()
 
   DATA_IVECTOR(cc_id);
   DATA_IVECTOR(cc_yob_id);
+  DATA_IVECTOR(cc_age_id);
   DATA_VECTOR(svw);
 
   // priors
@@ -25,6 +26,7 @@ Type objective_function<Type>::operator() ()
 
   DATA_VECTOR(sd_cc); // spatial
   DATA_VECTOR(sd_cc_yob); // interaction
+  DATA_VECTOR(sd_cc_age); // interaction
 
   DATA_VECTOR(palpha);
   DATA_VECTOR(p_a);
@@ -37,6 +39,8 @@ Type objective_function<Type>::operator() ()
 
   DATA_MATRIX(R_cc_yob); // R_cc X R_yob
   DATA_INTEGER(R_cc_yob_rank);
+  DATA_MATRIX(R_cc_age); // R_cc X R_age
+  DATA_INTEGER(R_cc_age_rank);
 
   // Data model - log-logistic parameters
   PARAMETER(intercept);
@@ -87,9 +91,26 @@ Type objective_function<Type>::operator() ()
   prior += density::GMRF(ktools::prepare_Q(R_cc_yob, cc_yob_e))(cc_yob);
   prior += (R_cc_yob_rank - cc_yob.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
 
+  // countries x age interaction
+  PARAMETER_VECTOR  (cc_age);
+  PARAMETER         (log_cc_age_e);
+  Type cc_age_e = exp(log_cc_age_e);
+  prior -= ktools::pc_prec(cc_age_e, sd_cc_age(0), sd_cc_age(1));
+  for (int j = 0; j < cc_vec.size(); ++j) {
+    vector<Type> v_j = cc_age.segment(j * age_rw2.size(), age_rw2.size());
+    prior -= ktools::soft_zero_sum(v_j);
+  }
+  prior += density::GMRF(ktools::prepare_Q(R_cc_age, cc_age_e))(cc_age);
+  prior += (R_cc_age_rank - cc_age.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
+
   // Data likelihood
   for (int i = 0; i < afs.size(); i++) {
-    Type eta = intercept + yob_rw2(yob(i)) + age_rw2(age(i)) + cc_vec(cc_id(i)) + cc_yob(cc_yob_id(i));
+    Type eta = intercept + 
+      yob_rw2(yob(i)) + 
+      age_rw2(age(i)) + 
+      cc_vec(cc_id(i)) + 
+      cc_yob(cc_yob_id(i)) +
+      cc_age(cc_age_id(i));
     Type lambda = exp(eta);
     if (event(i)) {
       dll -= log(
