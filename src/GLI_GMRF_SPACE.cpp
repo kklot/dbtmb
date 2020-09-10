@@ -1,33 +1,12 @@
-#include <R.h>
 #include <TMB.hpp>
-#include <omp.h>
-
-// config.trace.parallel     = true;
-// config.trace.optimize     = true;
-// config.trace.atomic       = true;
-// config.optimize.instantly = false; // Always optimize just after tape creation?
-// config.optimize.parallel  = false; // Allow optimize in parallel (memory consuming)?
-// config.tape.parallel      = false; // Enable parallel tape creation?
-
 #include <ktools.hpp>
-
-// prepare Q
-template <class Type>
-Eigen::SparseMatrix<Type> prepare_Q(matrix<Type> R, Type tau) {
-  R = tau * R.array();
-  R.diagonal().array() += 1e-8;
-  return tmbutils::asSparseMatrix(R);
-}
 
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
   parallel_accumulator<Type> dll(this);
-  // #ifdef _OPENMP
-  //   int threadnum = omp_get_thread_num();
-  //   Rprintf("OpenMP supported, thread #%d.\n", threadnum);
-  // #endif
-  // Model data
+
+  // data
   DATA_VECTOR(afs);
   DATA_VECTOR(afs_u);
   DATA_VECTOR(afs_l);
@@ -48,10 +27,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(sd_cc_yob); // interaction
 
   DATA_VECTOR(palpha);
-  // DATA_VECTOR(alpha_prec);
-
   DATA_VECTOR(p_a);
-  // DATA_VECTOR(a_prec);
 
   DATA_MATRIX(R_age);
   DATA_MATRIX(R_yob);
@@ -68,33 +44,13 @@ Type objective_function<Type>::operator() ()
   Type prior = 0.0; // this kills parallel
   prior -= dnorm(intercept, sd_beta(0), sd_beta(1), true);
 
-  // PARAMETER(log_alpha);
-  // prior -= dlgamma(log_alpha, palpha(0), palpha(1), true);
-
   PARAMETER_VECTOR(log_alpha_vec); // do Q will be nicer
   prior -= dlgamma(log_alpha_vec, palpha(0), palpha(1), true).sum();
   vector<Type> alpha_vec = exp(log_alpha_vec);
-  // PARAMETER(log_alpha_vec_prec);
-  // Type alpha_vec_sd = pow(exp(log_alpha_vec_prec), -0.5);
-  // prior -= ktools::pc_prec(exp(log_alpha_vec_prec), alpha_prec(0), alpha_prec(1));
-  // prior -= dnorm(alpha_vec, Type(0), alpha_vec_sd).sum();
-  // prior -= ktools::soft_zero_sum(alpha_vec);
-  // for (int i = 0; i < alpha_vec.size(); ++i)
-    // alpha_vec(i) += exp(log_alpha);
-
-  // PARAMETER(log_a);
-  // prior -= dlgamma(log_a, p_a(0), p_a(1), true);
 
   PARAMETER_VECTOR(log_a_vec);
   prior -= dlgamma(log_a_vec, p_a(0), p_a(1), true).sum();
   vector<Type> a_vec = exp(log_a_vec);
-  // PARAMETER(log_a_vec_prec);
-  // prior -= ktools::pc_prec(exp(log_a_vec_prec), a_prec(0), a_prec(1));
-  // Type a_vec_sd = pow(exp(log_a_vec_prec), -0.5);
-  // prior -= dnorm(a_vec, Type(0), a_vec_sd).sum();
-  // prior -= ktools::soft_zero_sum(a_vec);
-  // for (int i = 0; i < a_vec.size(); ++i)
-  //   a_vec(i) += exp(log_a);
 
   // yob rw2
   PARAMETER_VECTOR (yob_rw2);
@@ -132,7 +88,6 @@ Type objective_function<Type>::operator() ()
   prior += (R_cc_yob_rank - cc_yob.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
 
   // Data likelihood
-  // vector<Type> pwdens(afs.size()); // for LOO, WAIC
   for (int i = 0; i < afs.size(); i++) {
     Type eta = intercept + yob_rw2(yob(i)) + age_rw2(age(i)) + cc_vec(cc_id(i)) + cc_yob(cc_yob_id(i));
     Type lambda = exp(eta);
@@ -147,7 +102,6 @@ Type objective_function<Type>::operator() ()
     }
   }
   dll += prior;
-  // dll += prior - sum(log(pwdens));
   REPORT(prior);;
   return dll;
 }
