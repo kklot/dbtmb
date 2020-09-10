@@ -72,7 +72,7 @@ Type objective_function<Type>::operator() ()
   Type cc_e = exp(log_cc_e);
   prior -= ktools::pc_prec(cc_e, sd_cc(0), sd_cc(1));
   prior -= ktools::soft_zero_sum(cc_vec);
-  prior += density::GMRF(prepare_Q(R_cc, cc_e))(cc_vec);
+  prior += density::GMRF(ktools::prepare_Q(R_cc, cc_e))(cc_vec);
   prior += (R_cc_rank - cc_vec.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
   
   // countries x yob interaction
@@ -84,7 +84,7 @@ Type objective_function<Type>::operator() ()
     vector<Type> v_j = cc_yob.segment(j * yob_rw2.size(), yob_rw2.size());
     prior -= ktools::soft_zero_sum(v_j);
   }
-  prior += density::GMRF(prepare_Q(R_cc_yob, cc_yob_e))(cc_yob);
+  prior += density::GMRF(ktools::prepare_Q(R_cc_yob, cc_yob_e))(cc_yob);
   prior += (R_cc_yob_rank - cc_yob.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
 
   // Data likelihood
