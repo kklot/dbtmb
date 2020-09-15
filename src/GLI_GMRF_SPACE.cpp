@@ -23,6 +23,9 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(sd_beta);
   DATA_VECTOR(sd_yob);
   DATA_VECTOR(sd_age);
+  
+  DATA_SCALAR(age_order);
+  DATA_SCALAR(yob_order);
 
   DATA_VECTOR(sd_cc); // spatial
   DATA_VECTOR(sd_ccxyob); // interaction
@@ -61,14 +64,14 @@ Type objective_function<Type>::operator() ()
   PARAMETER        (log_yob_rw2_e);
   Type yob_rw2_e = exp(log_yob_rw2_e);
   prior -= ktools::pc_prec(yob_rw2_e, sd_yob(0), sd_yob(1));
-  prior += ktools::rw(yob_rw2, R_yob, yob_rw2_e);
+  prior += ktools::rw(yob_rw2, R_yob, yob_rw2_e, yob_order);
 
   // age rw2
   PARAMETER_VECTOR (age_rw2);
   PARAMETER        (log_age_rw2_e);
   Type age_rw2_e = exp(log_age_rw2_e);
   prior -= ktools::pc_prec(age_rw2_e, sd_age(0), sd_age(1));
-  prior += ktools::rw(age_rw2, R_age, age_rw2_e);
+  prior += ktools::rw(age_rw2, R_age, age_rw2_e, age_order);
 
   // countries spatial
   PARAMETER_VECTOR  (cc_vec);
