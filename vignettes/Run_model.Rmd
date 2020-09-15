@@ -1,0 +1,197 @@
+---
+title: "Fitting"
+author: "Kinh Nguyen"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fitting}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Install model
+
+```{r include=FALSE, echo=FALSE, warnings=FALSE, message=FALSE}
+# Sys.setenv(R_STAGED_INSTALL=FALSE)
+remotes::install_github("kklot/dbtmb@master")
+library(dbtmb)
+library(ktools)
+
+library(TMB)
+library(data.table)
+library(tidyverse)
+library(magrittr)
+set.seed(2020)
+```
+
+Read and prep data
+
+```{r include=FALSE, echo=FALSE, warnings=FALSE, message=FALSE}
+pth = "~/HIVInferenceGroup-WP/Shared Documents/Data/household surveys/DHS/AFRICA_lite.csv.bz2"
+
+dhs <- data.table::fread(pth)
+dhs[, yob := cmc_to_year(dob)]
+dhs[, svy := cmc_to_year(doi)]
+
+# Merge surveys
+svs <- dhs[, .(
+    svy  = sort(unique(svy)), 
+    svy2 = remove_consecutive(sort(unique(svy)))), ISO_A3]
+dhs[svs, on=c("ISO_A3", "svy"), svy2 := i.svy2]
+dhs[, age := svy2 - yob]
+# excluding old
+dhs <- dhs[age < 56 & yob >=1950 & svy2 >=1990]
+
+ccs = c("Zimbabwe", "Zambia", "Uganda", "Tanzania", "Malawi")
+ccs = sapply(ccs, countrycode::countrycode, 
+    origin='country.name', destination='iso3c') %>% unname
+
+sx  <- 1
+dt = dhs[sex==sx & ISO_A3 %in% ccs]
+```
+
+Model indices
+
+```{r include=FALSE, echo=FALSE, warnings=FALSE, message=FALSE}
+age_id <- range2seq(dt[, age])
+n_age_id <- length(age_id)
+
+yob_id <- range2seq(dt[, yob])
+n_yob_id <- length(yob_id)
+
+# Rs
+yob_order = 2
+age_order = 1
+R_age <- genR(n_age_id, order = age_order) # this make ccxage works
+R_yob <- genR(n_yob_id, order = yob_order)
+
+# countries
+n_cc_id <- n_unique(dt$ISO_A3)
+cc_id <- data.table(ISO_A3 = unique(dt$ISO_A3), cc_id = 1:n_unique(dt$ISO_A3))
+
+# IID
+R_cc      = diag(n_cc_id)
+R_cc_rank = qr(R_cc)$rank # not really needed
+
+# Interaction with birth cohort
+R_ccxyob      = kronecker(R_cc, R_yob)
+R_ccxyob_rank = qr(R_ccxyob)$rank # not really needed
+
+# Interaction with age
+R_ccxage      = kronecker(R_cc, R_age)
+R_ccxage_rank = qr(R_ccxage)$rank # not really needed
+
+# interaction id
+# - expand.grid run the first argument first which is not what we want
+# - for the kronecker product, need to switch position of expand.grid
+ccxyob_id <- expand.grid(yob_id, 1:n_cc_id) %>% 
+  set_colnames(c('yob', 'cc_id')) %>% 
+  mutate(ccxyob_id = 1:n()) %>%
+  data.table
+
+ccxage_id <- expand.grid(age_id, 1:n_cc_id) %>% 
+  set_colnames(c('age', 'cc_id')) %>% 
+  mutate(ccxage_id = 1:n()) %>%
+  data.table
+
+# add indices to data
+dt[cc_id, on="ISO_A3", cc_id := i.cc_id]
+dt[ccxyob_id, on=c('cc_id', 'yob'), ccxyob_id := i.ccxyob_id]
+dt[ccxage_id, on=c('cc_id', 'age'), ccxage_id := i.ccxage_id]
+```
+
+TMB metadata and data
+
+```{r include=FALSE, echo=FALSE, warnings=FALSE, message=FALSE}
+data = list(
+    # data
+    afs   = dt[, afs], # right censor 
+    afs_l = dt[, afs - 0], #! interval
+    afs_u = dt[, afs + 1], 
+    age   = dt[, age - min(age)],
+    event = dt[, event],
+    yob   = dt[, yob - min(yob)], 
+    cc_id = dt[, cc_id-1],
+    ccxyob_id = dt[, ccxyob_id-1],
+    ccxage_id = dt[, ccxage_id-1],
+    svw   = dt[, scaled_w],
+    # priors
+    sd_beta    = c(-2, 0.5), # mostly non positive intercept
+    sd_yob     = c(1e-3, 0.1), # precision not sd
+    # RW order
+    yob_order  = yob_order,
+    age_order  = age_order,
+    # RE precision
+    sd_age     = c(1e-3, 0.1),
+    sd_cc      = c(1e-3, 0.1),
+    sd_ccxyob  = c(1e-3, 0.1),
+    sd_ccxage  = c(1e-1, 0.1),
+    # Hyper Skewed LL
+    palpha     = c(5, 2), # mean alpha
+    p_a        = c(1, 1), # skewness mean
+    # RE structure
+    R_age         = R_age,
+    R_yob         = R_yob,
+    R_cc          = R_cc,
+    R_cc_rank     = R_cc_rank,
+    R_ccxyob      = R_ccxyob,
+    R_ccxyob_rank = R_ccxyob_rank,
+    R_ccxage      = R_ccxage,
+    R_ccxage_rank = R_ccxage_rank
+)
+
+init = list(
+    intercept        = -2.0,
+    log_alpha_vec    = rep(log(10), n_cc_id),
+    log_a_vec        = rep(log(1), n_cc_id),
+
+    yob_rw2          = rep(0, n_yob_id),
+    age_rw2          = rep(0, n_age_id),
+    cc_vec           = rep(0, n_cc_id),
+    ccxyob           = rep(0, n_cc_id * n_yob_id),
+    ccxage           = rep(0, n_cc_id * n_age_id),
+
+    log_yob_rw2_e    = log(sd2prec(1e-3)),
+    log_age_rw2_e    = log(sd2prec(1e-3)),
+    log_cc_e         = log(sd2prec(1e-3)),
+    log_ccxyob_e     = log(sd2prec(1e-3)),
+    log_ccxage_e     = log(sd2prec(1e-3))
+)
+
+fixpars <- tmb_fixit(init, c(
+    'log_ccxyob_e', 
+    'log_ccxage_e', 
+    'log_age_rw2_e', 
+    'log_yob_rw2_e', 
+    'log_cc_e'))
+
+opts = list(
+    data       = data,
+    parameters = init,
+    random     = c('age_rw2', 'yob_rw2', 'cc_vec', 'ccxyob', 'ccxage'),
+    silent     = 0,
+    DLL        = 'dbtmb', 
+    map        = fixpars
+)
+```
+
+Fit
+
+```{r include=FALSE, echo=FALSE, warnings=FALSE, message=FALSE}
+openmp()
+obj = do.call('MakeADFun', opts)
+fit = nlminb(obj$par, obj$fn, obj$gr)
+rp  = sdreport(obj)
+rd  = summary(rp, 'random')
+fx  = summary(rp, 'fixed')
+oo  = list(obj=obj, fit=fit, report=rp, random=rd, fixed=fx)
+dir.create('fit_all_iid_space_age')
+saveRDS(oo, 'fit_all_iid_space_age/male_rw1.rds')
+```
