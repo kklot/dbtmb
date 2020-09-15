@@ -20,7 +20,7 @@ Install model
 
 ```{r include=FALSE, echo=FALSE, warnings=FALSE, message=FALSE}
 # Sys.setenv(R_STAGED_INSTALL=FALSE)
-remotes::install_github("kklot/dbtmb@master")
+remotes::install_github("kklot/dbtmb@testing")
 library(dbtmb)
 library(ktools)
 
