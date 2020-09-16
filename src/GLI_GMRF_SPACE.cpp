@@ -87,10 +87,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER         (log_ccxyob_e);
   Type ccxyob_e = exp(log_ccxyob_e);
   prior -= ktools::pc_prec(ccxyob_e, sd_ccxyob(0), sd_ccxyob(1));
-  for (int j = 0; j < cc_vec.size(); ++j) {
-    vector<Type> v_j = ccxyob.segment(j * yob_rw2.size(), yob_rw2.size());
-    prior -= ktools::soft_zero_sum(v_j);
-  }
+  prior -= ktools::constraint2D(ccxyob.data(), yob_rw2.size(), cc_vec.size());
   prior += density::GMRF(ktools::prepare_Q(R_ccxyob, ccxyob_e))(ccxyob);
   prior += (R_ccxyob_rank - ccxyob.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
 
@@ -99,10 +96,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER         (log_ccxage_e);
   Type ccxage_e = exp(log_ccxage_e);
   prior -= ktools::pc_prec(ccxage_e, sd_ccxage(0), sd_ccxage(1));
-  for (int j = 0; j < cc_vec.size(); ++j) {
-    vector<Type> v_j = ccxage.segment(j * age_rw2.size(), age_rw2.size());
-    prior -= ktools::soft_zero_sum(v_j);
-  }
+  prior -= ktools::constraint2D(ccxage.data(), age_rw2.size(), cc_vec.size());
   prior += density::GMRF(ktools::prepare_Q(R_ccxage, ccxage_e))(ccxage);
   prior += (R_ccxage_rank - ccxage.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
 
