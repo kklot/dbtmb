@@ -1,0 +1,8 @@
+CXX14FLAGS   = -O3 -s -DNDEBUG --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
+CXXFLAGS     = -O3 -s -DNDEBUG --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
+  CFLAGS     = -O3 -s -DNDEBUG --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_LIBS 	 = $(SHLIB_OPENMP_CXXFLAGS)
+CXX_STD      = CXX11
+# PKG_LIBS 	 = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+# PKG_CXXFLAGS = -I../inst/include -I. $(SHLIB_OPENMP_CXXFLAGS) 
