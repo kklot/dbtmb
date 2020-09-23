@@ -1,4 +1,4 @@
-CXX14FLAGS   = -O3 -s -DNDEBUG -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
-CXXFLAGS     = -O3 -s -DNDEBUG -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
-  CFLAGS     = -O3 -s -DNDEBUG -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
+CXX14FLAGS   = -O3 -s -DNDEBUG --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
+CXXFLAGS     = -O3 -s -DNDEBUG --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
+  CFLAGS     = -O3 -s -DNDEBUG --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
