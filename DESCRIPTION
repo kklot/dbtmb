@@ -9,9 +9,9 @@ Authors@R:
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 LinkingTo: 
-  TMB, 
-  RcppEigen, 
-  ktools
+    TMB, 
+    RcppEigen, 
+    ktools
 Remotes:
     kklot/ktools  
 License: What license it uses
