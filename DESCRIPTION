@@ -10,10 +10,11 @@ Authors@R:
 Description: What the package does (one paragraph).
 LinkingTo: 
     TMB, 
-    RcppEigen, 
+    RcppEigen
+Imports:
     ktools
 Remotes:
-    kklot/ktools  
+    github::kklot/ktools
 License: What license it uses
 Encoding: UTF-8
 LazyData: true

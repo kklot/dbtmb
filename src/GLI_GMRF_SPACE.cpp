@@ -1,5 +1,5 @@
 #include <TMB.hpp>
-#include <ktools.hpp>
+#include "ktools.hpp"
 
 template<class Type>
 Type objective_function<Type>::operator() ()
