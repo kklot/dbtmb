@@ -1,7 +1,4 @@
-# CXX14FLAGS   = --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
-# CXXFLAGS     = --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
-#   CFLAGS     = --no-multiarch -march=native -mtune=native -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-c++11-inline-namespace
-PKG_CXXFLAGS = -m64 -DNDEBUG -Wa,-mbig-obj $(SHLIB_OPENMP_CXXFLAGS)
+PKG_CXXFLAGS = --no-multiarch -march=native -mtune=native -DNDEBUG -Wa,-mbig-obj $(SHLIB_OPENMP_CXXFLAGS)
 PKG_LIBS 	 = $(SHLIB_OPENMP_CXXFLAGS)
 CXX_STD      = CXX11
 # PKG_LIBS 	 = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
