@@ -11,10 +11,6 @@ Description: What the package does (one paragraph).
 LinkingTo: 
     TMB, 
     RcppEigen
-Imports:
-    ktools
-Remotes:
-    github::kklot/ktools
 License: What license it uses
 Encoding: UTF-8
 LazyData: true
