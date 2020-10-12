@@ -119,7 +119,13 @@ Type objective_function<Type>::operator() ()
       dll -= log(svw(i) * ktools::St_llogisI(afs(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i))));
     }
   }
-  dll += prior;
-  REPORT(prior);;
+  dll += prior; 
+  ADREPORT(alpha_vec);
+  ADREPORT(a_vec);
+  ADREPORT(age_rw2_e);
+  ADREPORT(yob_rw2_e);
+  ADREPORT(cc_e);
+  ADREPORT(ccxyob_e);
+  ADREPORT(ccxage_e);
   return dll;
 }
