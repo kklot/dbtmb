@@ -122,7 +122,19 @@ Type objective_function<Type>::operator() ()
       dll -= log(svw(i) * ktools::St_llogisI(afs(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i))));
     }
   }
-  dll += prior; 
+  dll += prior;
+  // Reporting
+  int nC = cc_vec.size(), nT = yob_rw2.size(), nA = age_rw2.size();
+  vector<Type> median(nC * nT * nA), lambdas(nC * nT * nA);
+  for (int cc = 0; cc < nC; ++cc)
+    for (int yb = 0; yb < nT; ++yb)
+      for (int ag = 0; ag < nA; ++ag) {
+        Type ate = intercept + yob_rw2(yb) + age_rw2(ag) + cc_vec(cc) + ccxyob(cc*nT+yb) + ccxage(cc*nA+ag);
+        median[cc*nT*nA + yb*nA + ag] = 1/exp(ate) * pow(-1 + pow(0.5, -1/a_vec(cc)), -1/alpha_vec(cc));
+        lambdas[cc*nT*nA + yb*nA + ag] = exp(ate);
+      }
+  REPORT(median);
+  REPORT(lambdas);
   ADREPORT(alpha_vec);
   ADREPORT(a_vec);
   ADREPORT(age_rw2_e);
