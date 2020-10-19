@@ -48,16 +48,19 @@ Type objective_function<Type>::operator() ()
   // Data model - log-logistic parameters
   PARAMETER(intercept);
 
-  Type prior = 0.0; // this kills parallel
+  Type prior = 0.0;
   prior -= dnorm(intercept, sd_beta(0), sd_beta(1), true);
 
-  PARAMETER_VECTOR(log_alpha_vec); // do Q will be nicer
-  prior -= dlgamma(log_alpha_vec, palpha(0), palpha(1), true).sum();
+  // Shape
+  PARAMETER_VECTOR(log_alpha_vec); 
+  prior -= dnorm(log_alpha_vec, palpha(0), palpha(1), true).sum();
   vector<Type> alpha_vec = exp(log_alpha_vec);
 
-  PARAMETER_VECTOR(log_a_vec);
-  prior -= dlgamma(log_a_vec, p_a(0), p_a(1), true).sum();
-  vector<Type> a_vec = exp(log_a_vec);
+  // Skewness *
+  PARAMETER_VECTOR(a_vec_star);
+  prior -= dnorm(a_vec_star, p_a(0), p_a(1), true).sum();
+  // Skewness real
+  vector<Type> a_vec = exp(a_vec_star - 1.1*log_alpha_vec);
 
   // yob rw2
   PARAMETER_VECTOR (yob_rw2);
