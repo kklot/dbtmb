@@ -105,12 +105,7 @@ Type objective_function<Type>::operator() ()
 
   // Data likelihood
   for (int i = 0; i < afs.size(); i++) {
-    Type eta = intercept + 
-      yob_rw2(yob(i)) + 
-      age_rw2(age(i)) + 
-      cc_vec(cc_id(i)) + 
-      ccxyob(ccxyob_id(i)) +
-      ccxage(ccxage_id(i));
+    Type eta = intercept + yob_rw2(yob(i)) + age_rw2(age(i)) + cc_vec(cc_id(i)) + ccxyob(ccxyob_id(i)) + ccxage(ccxage_id(i));
     Type lambda = exp(eta);
     if (event(i)) {
       dll -= log(
