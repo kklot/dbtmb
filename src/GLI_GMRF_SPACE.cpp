@@ -120,7 +120,8 @@ Type objective_function<Type>::operator() ()
   dll += prior;
   // Reporting
   int nC = cc_vec.size(), nT = yob_rw2.size(), nA = age_rw2.size();
-  vector<Type> median(nC * nT * nA), lambdas(nC * nT * nA);
+  vector<Type> rdims(3), median(nC * nT * nA), lambdas(nC * nT * nA);
+  rdims << nA, nT, nC;
   for (int cc = 0; cc < nC; ++cc)
     for (int yb = 0; yb < nT; ++yb)
       for (int ag = 0; ag < nA; ++ag) {
@@ -128,8 +129,12 @@ Type objective_function<Type>::operator() ()
         median[cc*nT*nA + yb*nA + ag] = 1/exp(ate) * pow(-1 + pow(0.5, -1/a_vec(cc)), -1/alpha_vec(cc));
         lambdas[cc*nT*nA + yb*nA + ag] = exp(ate);
       }
+  REPORT(rdims);
   REPORT(median);
   REPORT(lambdas);
+  // just a way to extract parameters without indexing headache
+  REPORT(alpha_vec); REPORT(a_vec); REPORT(yob_rw2); REPORT(age_rw2); REPORT(cc_vec); 
+  REPORT(ccxyob); REPORT(ccxage);
   ADREPORT(alpha_vec);
   ADREPORT(a_vec);
   ADREPORT(age_rw2_e);
