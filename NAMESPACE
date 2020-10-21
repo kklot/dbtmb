@@ -3,4 +3,5 @@
 S3method(predict,dbtmb)
 export(as_array)
 export(predict)
+export(sample_tmb)
 useDynLib(dbtmb)
