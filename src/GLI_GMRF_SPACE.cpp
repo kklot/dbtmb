@@ -90,7 +90,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER         (log_ccxyob_e);
   Type ccxyob_e = exp(log_ccxyob_e);
   prior -= ktools::pc_prec(ccxyob_e, sd_ccxyob(0), sd_ccxyob(1));
-  prior -= ktools::constraint2D(ccxyob.data(), yob_rw2.size(), cc_vec.size());
+  prior -= ktools::constraint2D(ccxyob.data(), yob_rw2.size(), cc_vec.size(), true, true, false, false);
   prior += density::GMRF(ktools::prepare_Q(R_ccxyob, ccxyob_e))(ccxyob);
   prior += (R_ccxyob_rank - ccxyob.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
 
