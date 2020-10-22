@@ -4,7 +4,15 @@
 \alias{predict.dbtmb}
 \title{Predict from fitted dbtmb}
 \usage{
-\method{predict}{dbtmb}(fit, par, type = c("eversex"), cutoff = 24, long = TRUE, ...)
+\method{predict}{dbtmb}(
+  fit,
+  par,
+  type = c("eversex"),
+  cutoff = 24,
+  long = TRUE,
+  quick = FALSE,
+  ...
+)
 }
 \arguments{
 \item{fit}{fitted dbtmb class}
