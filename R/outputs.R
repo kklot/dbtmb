@@ -36,3 +36,18 @@ predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE, qui
   }
   o
 }
+#'@export 
+eversex_ui <- function(fit, smp, cutoff=15:20, n_cores=20) {
+  message('predicting sample:\n')
+  o <- parallel::mclapply(1:nrow(smp), function(x) predict(fit, smp[x, ], cutoff=cutoff, quick=TRUE), mc.cores = n_cores)
+  o <- do.call('rbind', o)
+  o <- parallel::mclapply(1:ncol(o), function(x) ktools::quantile95(o[, x]), mc.cores=n_cores)
+  o <- do.call('cbind', o)
+  dim(o) <- c(3, fit$obj$env$reportenv$rdims, length(cutoff))
+  dimnames(o) <- with(fit$meta, list(c('lo', 'med', 'up'),  
+    age=age, yob=yob, ISO_A3=cc_id$ISO_A3, kut=cutoff))
+  o <- data.table::as.data.table(o) 
+  scol <- c('age', 'yob', 'kut')
+  o[, (scol) := lapply(.SD, as.double), .SDcols=scol]
+  data.table::dcast(o, ... ~ V5, value.var='value')
+}

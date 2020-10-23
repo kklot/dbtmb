@@ -3,6 +3,7 @@
 S3method(as_array,dbtmb)
 S3method(predict,dbtmb)
 export(as_array)
+export(eversex_ui)
 export(predict)
 export(sample_tmb)
 useDynLib(dbtmb)
