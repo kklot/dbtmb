@@ -33,8 +33,9 @@ predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE, qui
   if (long) {
     o <- as.data.table(o)
     setnames(o, colnames(o), c('age', 'yob', 'ISO_A3', 'kut', type))
-    ccols <- c('age', 'yob', 'kut')
-    o[, ccols] <- lapply(o[, ccols], as.double)
+    o$age <- as.double(o$age)
+    o$yob <- as.double(o$yob)
+    o$kut <- as.double(o$kut)
   }
   o
 }
