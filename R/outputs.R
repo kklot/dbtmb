@@ -17,6 +17,8 @@ predict <- function(fit, ...) UseMethod("predict")
 #' @param fit fitted dbtmb class
 #' @param par parameter set to simulate
 #' @param cutoff vector, can be length one
+#' @param long long form
+#' @param quick array form
 #' @export
 predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE, quick=FALSE,...) {
   if (missing(par)) par <- fit$obj$env$last.par
@@ -50,8 +52,9 @@ eversex_ui <- function(fit, smp, cutoff=15:20, n_cores=20) {
   dimnames(o) <- with(fit$meta, list(c('lo', 'med', 'up'),  
     age=age, yob=yob, ISO_A3=cc_id$ISO_A3, kut=cutoff))
   o <- data.table::as.data.table(o) 
-  scol <- c('age', 'yob', 'kut')
-  o[, (scol) := lapply(.SD, as.double), .SDcols=scol]
+  o$age <- as.double(o$age)
+  o$yob <- as.double(o$yob)
+  o$kut <- as.double(o$kut)
   data.table::dcast(o, ... ~ V5, value.var='value')
 }
 
