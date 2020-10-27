@@ -86,8 +86,8 @@ uncertainty.dbtmb <- function(fit, smp, n_cores=20) {
     age=age, yob=yob, ISO_A3=cc_id$ISO_A3))
   median_e <- data.table::as.data.table(median_e) 
   scol <- c('age', 'yob')
-  median_e[, (scol) := lapply(.SD, as.double), .SDcols=scol]
-
+  median_e$age <- as.double(median_e$age)
+  median_e$yob_e <- as.double(median_e$yob_e)
 
   age_e <- apply(sapply(tmp, function(x) x$age), 1, quantile95)
   dim(age_e) <- c(3, r$rdims[-2])
