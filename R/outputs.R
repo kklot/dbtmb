@@ -2,7 +2,7 @@
 as_array <- function(fit, ...) UseMethod("as_array")
 #'@export 
 as_array.dbtmb <- function(fit, name='median') {
-  TMB::openmp(1) # never do retaping in parallels
+  options(tape.parallel=FALSE, DLL='dbtmb')
   rp <- fit$obj$report()
   o <- array(rp[[name]], rp$rdims)
   dimnames(o) <- with(fit$meta, list(age=age, yob=yob, cc=cc_id$ISO_A3))
@@ -20,7 +20,7 @@ predict <- function(fit, ...) UseMethod("predict")
 #' @export
 predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE, quick=FALSE,...) {
   if (missing(par)) par <- fit$obj$env$last.par
-  TMB::openmp(1) # never do retaping in parallel
+  options(tape.parallel=FALSE, DLL='dbtmb')
   r <- fit$obj$report(par) # can check this and not redoing env$reportenv$...
   scale <- array(r$lambda, r$rdims)
   shape <- sweep(array(0, r$rdims), 3, r$alpha_vec, '+')
@@ -58,7 +58,7 @@ eversex_ui <- function(fit, smp, cutoff=15:20, n_cores=20) {
 uncertainty <- function(obj, ...) UseMethod("uncertainty")
 #'@export
 uncertainty.dbtmb <- function(fit, smp, n_cores=20) {
-  openmp(1)
+  options(tape.parallel=FALSE, DLL='dbtmb')
   r <- fit$obj$report(smp[1, ]) # do you know why this is prefered
 
   tmp  <- parallel::mclapply(1:nrow(smp), function(x) {
