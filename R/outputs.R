@@ -69,12 +69,23 @@ uncertainty.dbtmb <- function(fit, smp, n_cores=20) {
     r <- fit$obj$report(smp[x, ])
     age_e <- r$ccxage + rep(r$age_rw2, r$rdims[3])
     yob_e <- r$ccxyob + rep(r$yob_rw2, r$rdims[3])
-    list(age=age_e, yob=yob_e, cc=r$cc_vec, median=r$median)
+    list(itc=r$intercept, skew=r$a_vec, shape=r$alpha_vec, age=age_e, yob=yob_e, cc=r$cc_vec, median=r$median)
   }, mc.cores=n_cores)
 
+  itc <- quantile95(sapply(tmp, function(x) x$itc))
+
+  skew <- apply(sapply(tmp, function(x) x$skew), 1, quantile95)
+  dimnames(skew) <- with(fit$meta, list(c('lo', 'med', 'up'), ISO_A3=cc_id$ISO_A3))
+  skew <- data.table::as.data.table(t(skew), TRUE)
+  setnames(skew, 'rn', 'ISO_A3')
+
+  shape <- apply(sapply(tmp, function(x) x$shape), 1, quantile95)
+  dimnames(shape) <- with(fit$meta, list(c('lo', 'med', 'up'), ISO_A3=cc_id$ISO_A3))
+  shape <- data.table::as.data.table(t(shape), TRUE)
+  setnames(shape, 'rn', 'ISO_A3')
+
   cc_e <- apply(sapply(tmp, function(x) x$cc), 1, quantile95)
-  dimnames(cc_e) <- with(fit$meta, list(c('lo', 'med', 'up'),  
-    ISO_A3=cc_id$ISO_A3))
+  dimnames(cc_e) <- with(fit$meta, list(c('lo', 'med', 'up'), ISO_A3=cc_id$ISO_A3))
   cc_e <- data.table::as.data.table(t(cc_e), TRUE)
   setnames(cc_e, 'rn', 'ISO_A3')
 
@@ -104,9 +115,12 @@ uncertainty.dbtmb <- function(fit, smp, n_cores=20) {
   yob_e[, yob := as.double(yob)]
   
   list(
+    itc = itc, 
+    skew = skew,
+    shape = shape,
+    cc  = cc_e,
     age = data.table::dcast(age_e, ... ~ V3, value.var='value'),
     yob = data.table::dcast(yob_e, ... ~ V3, value.var='value'),
-    cc  = cc_e,
     median = data.table::dcast(median_e, ... ~ V4, value.var='value')
   )
 }
