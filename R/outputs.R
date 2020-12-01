@@ -2,8 +2,6 @@
 as_array <- function(fit, ...) UseMethod("as_array")
 #'@export 
 as_array.dbtmb <- function(fit, name='median') {
-  options(tape.parallel=FALSE, DLL='dbtmb')
-  rp <- fit$obj$report()
   o <- array(rp[[name]], rp$rdims)
   dimnames(o) <- with(fit$meta, list(age=age, yob=yob, cc=cc_id$ISO_A3))
   o
