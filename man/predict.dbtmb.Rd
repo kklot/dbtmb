@@ -20,6 +20,10 @@
 \item{par}{parameter set to simulate}
 
 \item{cutoff}{vector, can be length one}
+
+\item{long}{long form}
+
+\item{quick}{array form}
 }
 \description{
 Predict from fitted dbtmb
