@@ -1,13 +1,16 @@
-#'@export 
+#' @export 
 as_array <- function(fit, ...) UseMethod("as_array")
-#'@export 
+
+#' @export 
 as_array.dbtmb <- function(fit, name='median') {
   o <- array(fit$rp[[name]], fit$rp$rdims)
   dimnames(o) <- with(fit$meta, list(age=age, yob=yob, cc=cc_id$ISO_A3))
   o
 }
-#'@export 
+
+#' @export 
 predict <- function(fit, ...) UseMethod("predict")
+
 #' Predict from fitted dbtmb
 #' 
 #' Predict from fitted dbtmb
@@ -18,7 +21,8 @@ predict <- function(fit, ...) UseMethod("predict")
 #' @param long long form
 #' @param quick array form
 #' @export
-predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE, quick=FALSE,...) {
+predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE,
+													quick=FALSE,...) {
   if (missing(par)) par <- fit$obj$env$last.par
   options(tape.parallel=FALSE, DLL='dbtmb')
   r <- fit$obj$report(par) # can check this and not redoing env$reportenv$...
@@ -39,7 +43,8 @@ predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE, qui
   }
   o
 }
-#'@export
+
+#' @export
 eversex_ui <- function(fit, smp, cutoff=15:20, n_cores=20) {
   message('predicting sample:\n')
   o <- parallel::mclapply(1:nrow(smp), function(x) predict(fit, smp[x, ], cutoff=cutoff, quick=TRUE), mc.cores = n_cores)
@@ -56,9 +61,10 @@ eversex_ui <- function(fit, smp, cutoff=15:20, n_cores=20) {
   data.table::dcast(o, ... ~ V5, value.var='value')
 }
 
-#'@export
+#' @export
 uncertainty <- function(obj, ...) UseMethod("uncertainty")
-#'@export
+
+#' @export
 uncertainty.dbtmb <- function(fit, smp, n_cores=20) {
   options(tape.parallel=FALSE, DLL='dbtmb')
   r <- fit$obj$report(smp[1, ]) # do you know why this is prefered
