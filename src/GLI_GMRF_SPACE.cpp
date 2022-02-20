@@ -4,7 +4,7 @@
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
-  parallel_accumulator<Type> dll(this);
+  Type dll;
 
   // data
   DATA_VECTOR(afs);
@@ -106,16 +106,20 @@ Type objective_function<Type>::operator() ()
 
   // Data likelihood
   for (int i = 0; i < afs.size(); i++) {
-    Type eta = intercept + yob_rw2(yob(i)) + age_rw2(age(i)) + cc_vec(cc_id(i)) + ccxyob(ccxyob_id(i)) + ccxage(ccxage_id(i));
-    Type lambda = exp(eta);
-    if (event(i)) {
-      dll -= log(
-        svw(i) * (
-          ktools::St_llogisI(afs_l(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i))) -
-          ktools::St_llogisI(afs_u(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i)))
-        ));
-    } else {
-      dll -= log(svw(i) * ktools::St_llogisI(afs(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i))));
+    // https://github.com/kaskr/adcomp/issues/303#issuecomment-651168146
+    PARALLEL_REGION 
+    {
+      Type eta = intercept + yob_rw2(yob(i)) + age_rw2(age(i)) + cc_vec(cc_id(i)) + ccxyob(ccxyob_id(i)) + ccxage(ccxage_id(i));
+      Type lambda = exp(eta);
+      if (event(i)) {
+        dll -= log(
+          svw(i) * (
+            ktools::St_llogisI(afs_l(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i))) -
+            ktools::St_llogisI(afs_u(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i)))
+          ));
+      } else {
+        dll -= log(svw(i) * ktools::St_llogisI(afs(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i))));
+      }
     }
   }
   dll += prior;
