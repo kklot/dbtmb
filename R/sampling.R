@@ -9,8 +9,21 @@
 #' @export
 sample_tmb <- function(fit, nsample = 1000, random_only = TRUE, verbose = TRUE) {
   to_tape <- TMB:::isNullPointer(fit$obj$env$ADFun$ptr)
-  if (to_tape) 
-    fit$obj$retape(FALSE)
+  if (to_tape) {
+    obj <- fit$obj
+    fit$obj <- with(
+      obj$env,
+      TMB::MakeADFun(
+        data,
+        parameters,
+        map = map,
+        random = random,
+        silent = silent,
+        DLL = "dbtmb"
+      )
+    )
+    fit$obj$env$last.par.best <- obj$env$last.par.best
+  }
   par.full <- fit$obj$env$last.par.best  
   if(!random_only) {
     if(verbose) print("Calculating joint precision")
