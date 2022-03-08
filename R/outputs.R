@@ -29,7 +29,7 @@ predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE,
   scale <- array(r$lambda, r$rdims)
   shape <- sweep(array(0, r$rdims), 3, r$alpha_vec, '+')
   skew <- sweep(array(0, r$rdims), 3, r$a_vec, '+')
-  o <- sapply(cutoff, function(x) mapply(F_gllogisI, x, scale, shape, skew))
+  o <- sapply(cutoff, function(x) mapply(pskewlogis, x, scale, shape, skew))
   dim(o) <- c(r$rdims, length(cutoff))
   dimnames(o) <- with(fit$meta, list(age=age, yob=yob, cc=cc_id$ISO_A3, kut=cutoff))
   if (quick) 
