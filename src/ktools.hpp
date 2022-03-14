@@ -170,6 +170,25 @@ Type mu_llogis(Type alpha, Type lambda) {
   return t1*t2;
 }
 
+template <class Type>
+Type prior_loggamma(Type log_prec, Type a = 1, Type b = 1e-5) {
+    Type prec = exp(log_prec);
+    Type out = 0;
+    if (prec < 0.0) {
+        assert(prec >= 0.0);
+    } else if (prec == 0.0) { 
+        if (a == 1.0) {
+            out = 1.0 / b;
+        } else {
+            assert(0 == 1);
+        }
+    } else if (a == 1.0) {
+        out = -prec / b - log(b);
+    } else {
+        out = (a - 1.0) * log(prec / b) - prec / b - lgamma(a) - log(b);
+    }
+    return out + log_prec;
+}
 // penalized-log precision density
 template <class Type>
 Type pc_prec(Type x, Type u = 1.0, Type alpha = 0.01, bool give_log=true) {
