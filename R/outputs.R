@@ -48,8 +48,10 @@ predict.dbtmb <- function(fit, par, type=c("eversex"), cutoff=24, long=TRUE,
 eversex_ui <- function(fit, smp, cutoff=15:20, n_cores=20) {
   message('predicting sample:\n')
   o <- parallel::mclapply(1:nrow(smp), function(x) predict(fit, smp[x, ], cutoff=cutoff, quick=TRUE), mc.cores = n_cores)
+  wait_children_kill() # https://stackoverflow.com/a/43069470
   o <- do.call('rbind', o)
   o <- parallel::mclapply(1:ncol(o), function(x) ktools::quantile95(o[, x]), mc.cores=n_cores)
+  wait_children_kill() # https://stackoverflow.com/a/43069470
   o <- do.call('cbind', o)
   dim(o) <- c(3, fit$obj$env$reportenv$rdims, length(cutoff))
   dimnames(o) <- with(fit$meta, list(c('lo', 'med', 'up'),  
@@ -75,6 +77,7 @@ uncertainty.dbtmb <- function(fit, smp, n_cores=20) {
     yob_e <- r$ccxyob + rep(r$yob_rw2, r$rdims[3])
     list(itc=r$intercept, skew=r$a_vec, shape=r$alpha_vec, age=age_e, yob=yob_e, cc=r$cc_vec, median=r$median)
   }, mc.cores=n_cores)
+  wait_children_kill()
 
   itc <- quantile95(sapply(tmp, function(x) x$itc))
 
@@ -95,6 +98,7 @@ uncertainty.dbtmb <- function(fit, smp, n_cores=20) {
 
   median_e <- sapply(tmp, function(x) x$median)
   median_e <- parallel::mclapply(1:nrow(median_e), function(x) quantile95(median_e[x, ]), mc.cores=n_cores)
+  wait_children_kill()
   median_e <- do.call('cbind', median_e)
   dim(median_e) <- c(3, fit$obj$env$reportenv$rdims)
   dimnames(median_e) <- with(fit$meta, list(c('lo', 'med', 'up'),  
