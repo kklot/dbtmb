@@ -189,6 +189,16 @@ Type prior_loggamma(Type log_prec, Type a = 1, Type b = 1e-5) {
     }
     return out + log_prec;
 }
+
+// penalized-log precision density
+// x is log-precision
+template <class Type>
+Type pc_logprec(Type x, Type u = 0.03, Type alpha = 0.01) {
+  Type theta = -log(alpha) / u;
+  Type out = log(theta / 2.0) - theta * exp(-x / 2.) - x / 2.;
+  return out;
+}
+
 // penalized-log precision density
 template <class Type>
 Type pc_prec(Type x, Type u = 1.0, Type alpha = 0.01, bool give_log=true) {
