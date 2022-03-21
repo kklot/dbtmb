@@ -28,6 +28,22 @@ vector<Type> to_phi(vector<Type> thetas)
   return phi;
 }
 
+// INLA PC_COR prior
+template <class Type>
+Type pc_cor0(Type x, Type u = 0.5, Type alpha = 0.5)
+{
+  Type xx = exp(x),
+       rho = 2.0 * (xx / (1.0 + xx)) - 1.0;
+  Type ldens, lambda, ljac, val, mu;
+  mu = sqrt(-log(1.0 - pow(rho, 2)));
+  lambda = -log(alpha) / sqrt(-log(1.0 - pow(u, 2)));
+  // add the EPS to ensure its not INFINITY...
+  ldens = log(lambda) - lambda * mu + log((abs(rho) + FLT_EPSILON) / (1.0 - pow(rho, 2))) - log(mu + FLT_EPSILON);
+  ljac = log(abs(2.0 * xx / pow(1.0 + xx, 2)));
+  val = ldens + ljac;
+  return val;
+}
+
 // Constraint space-time interaction if use a vector input
 template <class Type>
 Type constraint2D(
