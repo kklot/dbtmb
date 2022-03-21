@@ -12,71 +12,86 @@ using namespace Eigen;
 #define _eps 1e-8 // An alternative limit argument for the first-order IGRMF
 
 // Constraint space-time interaction if use a vector input
-template<class Type>
-Type constraint2D(Type * v, int n_rows, int n_cols, 
-  bool over_rows=true, bool over_cols=true, 
-  bool linear_rows = false, bool linear_cols=false) {
+template <class Type>
+Type constraint2D(
+    Type *v, int n_rows, int n_cols,
+    bool over_rows = true, bool over_cols = false,
+    bool linear_rows = true, bool linear_cols = false)
+{
   // nrows is typical time dimension and ncol is space dimention
   // rows is over space/ cols is over time
   Type prior = 0;
-  Map< Matrix<Type, Dynamic, Dynamic> > M(v, n_rows, n_cols);
-  if (over_cols) { // means constraint over space ids within a time id
+  Map<Matrix<Type, Dynamic, Dynamic> > M(v, n_rows, n_cols);
+  if (over_cols)
+  {                                        // means constraint over space ids within a time id
     vector<Type> cols = M.rowwise().sum(); // each row is a time id
     // add here to keep consistent TMB -= in the main file
     prior += dnorm(cols, Type(0.0), Type(0.001) * n_cols, true).sum();
   }
-  if (linear_cols) { // linear constraint over space within time
-    Matrix<Type, Dynamic, 1> vv(n_cols); vv.setLinSpaced(n_cols, 1, n_cols);
-    vector<Type> lincols = M*vv;
-    prior += dnorm(lincols, Type(0.0), Type(0.001) * n_rows, true).sum(); 
+  if (linear_cols)
+  { // linear constraint over space within time
+    Matrix<Type, Dynamic, 1> vv(n_cols);
+    vv.setLinSpaced(n_cols, 1, n_cols);
+    vector<Type> lincols = M * vv;
+    prior += dnorm(lincols, Type(0.0), Type(0.001) * n_rows, true).sum();
   }
-  if (over_rows) { // means constraint over time ids within a space id
+  if (over_rows)
+  {                                        // means constraint over time ids within a space id
     vector<Type> rows = M.colwise().sum(); // each col is a space id
     prior += dnorm(rows, Type(0.0), Type(0.001) * n_rows, true).sum();
   }
-  if (linear_rows) { // linear constraint over time within space
-    Matrix<Type, Dynamic, 1> uu(n_rows); uu.setLinSpaced(n_rows, 1, n_rows);
-    vector<Type> linrows = M.transpose()*uu;
+  if (linear_rows)
+  { // linear constraint over time within space
+    Matrix<Type, Dynamic, 1> uu(n_rows);
+    uu.setLinSpaced(n_rows, 1, n_rows);
+    vector<Type> linrows = M.transpose() * uu;
     prior += dnorm(linrows, Type(0.0), Type(0.001) * n_cols, true).sum();
   }
   return prior;
 }
 
 // Constraint space-time interaction if use a vector input
-template<class Type>
+template <class Type>
 Type constraint2D_singleton(
-  Type * v, 
-  vector<Type> singletons, 
-  int n_rows, int n_cols, 
-  bool over_rows=true, bool over_cols=true, // sum to zero
-  bool linear_rows = true, bool linear_cols=false // linear constrains
-  ) {
+    Type *v,
+    vector<Type> singletons,
+    int n_rows, int n_cols,
+    bool over_rows = true, bool over_cols = true,     // sum to zero
+    bool linear_rows = true, bool linear_cols = false // linear constrains
+)
+{
   // nrows is typical time dimension and ncol is space dimention (column major)
   // rows is over space/ cols is over time
   Type prior = 0;
-  Map< Matrix<Type, Dynamic, Dynamic> > M(v, n_rows, n_cols);
-  if (over_cols) { // means constraint over space ids within a time id
+  Map<Matrix<Type, Dynamic, Dynamic> > M(v, n_rows, n_cols);
+  if (over_cols)
+  {                                        // means constraint over space ids within a time id
     vector<Type> cols = M.rowwise().sum(); // each row is a time id
     // add here to keep consistent TMB -= in the main file
     prior += dnorm(cols, Type(0.0), Type(0.001) * n_cols, true).sum();
   }
-  if (linear_cols) { // linear constraint over space within time (rw2 space case)
-    Matrix<Type, Dynamic, 1> vv(n_cols); vv.setLinSpaced(n_cols, 1, n_cols);
-    vector<Type> lincols = M*vv;
-    prior += dnorm(lincols, Type(0.0), Type(0.001) * n_rows, true).sum(); 
+  if (linear_cols)
+  { // linear constraint over space within time (rw2 space case)
+    Matrix<Type, Dynamic, 1> vv(n_cols);
+    vv.setLinSpaced(n_cols, 1, n_cols);
+    vector<Type> lincols = M * vv;
+    prior += dnorm(lincols, Type(0.0), Type(0.001) * n_rows, true).sum();
   }
-  if (over_rows) { // means constraint over time ids within a space id
+  if (over_rows)
+  {                                        // means constraint over time ids within a space id
     vector<Type> rows = M.colwise().sum(); // each col is a space id
     prior += dnorm(rows, Type(0.0), Type(0.001) * n_rows, true).sum();
   }
-  if (linear_rows) { // linear constraint over time within space
-    Matrix<Type, Dynamic, 1> uu(n_rows); uu.setLinSpaced(n_rows, 1, n_rows);
-    vector<Type> linrows = M.transpose()*uu; linrows *= singletons;
+  if (linear_rows)
+  { // linear constraint over time within space
+    Matrix<Type, Dynamic, 1> uu(n_rows);
+    uu.setLinSpaced(n_rows, 1, n_rows);
+    vector<Type> linrows = M.transpose() * uu;
+    linrows *= singletons;
     prior += dnorm(linrows, Type(0.0), Type(0.001) * n_cols, true).sum();
   }
   return prior;
 }
-
 
 // lag difference
 template <class Type>
