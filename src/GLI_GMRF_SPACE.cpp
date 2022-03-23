@@ -54,7 +54,6 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(R_age);
   DATA_MATRIX(R_cc);
   DATA_MATRIX(R_ccxyob); // R_cc X R_yob
-  DATA_INTEGER(R_ccxyob_rank);
   DATA_MATRIX(R_ccxage); // R_cc X R_age
 
   // Data model - log-logistic parameters
@@ -105,13 +104,14 @@ Type objective_function<Type>::operator() ()
   dll += density::GMRF(Qcc)(cc_vec);
   
   // countries x yob interaction
-  PARAMETER_VECTOR  (ccxyob);
-  PARAMETER         (log_ccxyob_e);
-  Type ccxyob_e = exp(log_ccxyob_e);
-  prior -= ktools::pc_prec(ccxyob_e, sd_ccxyob(0), sd_ccxyob(1));
-  prior -= ktools::constraint2D(ccxyob.data(), yob_rw2.size(), cc_vec.size());
-  prior += density::GMRF(ktools::prepare_Q(R_ccxyob, ccxyob_e))(ccxyob);
-  prior += (R_ccxyob_rank - ccxyob.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
+  PARAMETER_VECTOR(pacf_interx);
+  dll += density::MVNORM(Sigma)(pacf_interx);
+  vector<Type> phi_interx = to_phi(pacf_interx);
+  // - main params
+  PARAMETER_ARRAY(ccxyob_array);
+  dll -= ktools::constraint2D(ccxyob_array.data(), yob_rw2.size(), cc_vec.size(), true, false, false, false);
+	density::ARk_t<Type> ARx(phi_interx);
+  dll += SEPARABLE(density::GMRF(Qcc), ARx)(ccxyob_array);
 
   // countries x age interaction
   PARAMETER_VECTOR  (ccxage);
