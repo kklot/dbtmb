@@ -18,6 +18,13 @@ vector<Type> to_phi(vector<Type> thetas)
   return phi;
 }
 
+template <class Type>
+Eigen::SparseMatrix<Type> make_ok(matrix<Type> R, Type tau)
+{
+  R = tau * R.array();
+  return tmbutils::asSparseMatrix(R);
+}
+
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
@@ -39,53 +46,41 @@ Type objective_function<Type>::operator() ()
 
   // priors
   DATA_VECTOR(sd_beta);
-  DATA_VECTOR(sd_yob);
-  DATA_VECTOR(sd_age);
-  
-  DATA_SCALAR(age_order);
-  DATA_SCALAR(yob_order);
-
-  DATA_VECTOR(sd_cc); // spatial
-  DATA_VECTOR(sd_ccxyob); // interaction
-  DATA_VECTOR(sd_ccxage); // interaction
-
   DATA_VECTOR(palpha);
   DATA_VECTOR(p_a);
+  DATA_VECTOR(pc_main);
+  DATA_VECTOR(pc_interx);
 
   DATA_MATRIX(R_age);
-  DATA_MATRIX(R_yob);
-
   DATA_MATRIX(R_cc);
-  DATA_INTEGER(R_cc_rank);
-
   DATA_MATRIX(R_ccxyob); // R_cc X R_yob
   DATA_INTEGER(R_ccxyob_rank);
   DATA_MATRIX(R_ccxage); // R_cc X R_age
-  DATA_INTEGER(R_ccxage_rank);
 
   // Data model - log-logistic parameters
   PARAMETER(intercept);
-
-  Type prior = 0.0;
-  prior -= dnorm(intercept, sd_beta(0), sd_beta(1), true);
+  dll -= dnorm(intercept, sd_beta(0), sd_beta(1), true);
 
   // Shape
   PARAMETER_VECTOR(log_alpha_vec); 
-  prior -= dnorm(log_alpha_vec, palpha(0), palpha(1), true).sum();
+  dll -= dnorm(log_alpha_vec, palpha(0), palpha(1), true).sum();
   vector<Type> alpha_vec = exp(log_alpha_vec);
 
   // Skewness *
   PARAMETER_VECTOR(a_vec_star);
-  prior -= dnorm(a_vec_star, p_a(0), p_a(1), true).sum();
+  dll -= dnorm(a_vec_star, p_a(0), p_a(1), true).sum();
   // Skewness real
-  vector<Type> a_vec = exp(a_vec_star - 1.1*log_alpha_vec);
+  vector<Type> a_vec = exp(a_vec_star - 1.1 * log_alpha_vec);
 
   // age rw2
   PARAMETER_VECTOR (age_rw2);
   PARAMETER        (log_age_rw2_e);
   Type age_rw2_e = exp(log_age_rw2_e);
-  prior -= ktools::pc_prec(age_rw2_e, sd_age(0), sd_age(1));
-  prior += ktools::rw(age_rw2, R_age, age_rw2_e, age_order);
+  dll -= ktools::pc_logprec(log_age_rw2_e, pc_main[0], pc_main[1]);
+  dll -= ktools::soft_zero_sum(age_rw2);
+  Eigen::SparseMatrix<Type> Qage = make_ok(R_age, age_rw2_e);
+  dll += density::GMRF(Qage)(age_rw2);
+
   // yob ARk
   // - hyper
   PARAMETER_VECTOR(pacf_vec); // * theta * //
@@ -104,10 +99,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR  (cc_vec);
   PARAMETER         (log_cc_e);
   Type cc_e = exp(log_cc_e);
-  prior -= ktools::pc_prec(cc_e, sd_cc(0), sd_cc(1));
-  prior -= ktools::soft_zero_sum(cc_vec);
-  prior += density::GMRF(ktools::prepare_Q(R_cc, cc_e))(cc_vec);
-  prior += (R_cc_rank - cc_vec.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
+  dll -= ktools::pc_logprec(log_cc_e, pc_main[0], pc_main[1]);
+  dll -= ktools::soft_zero_sum(cc_vec);
+  Eigen::SparseMatrix<Type> Qcc = make_ok(R_cc, cc_e);
+  dll += density::GMRF(Qcc)(cc_vec);
   
   // countries x yob interaction
   PARAMETER_VECTOR  (ccxyob);
@@ -122,10 +117,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR  (ccxage);
   PARAMETER         (log_ccxage_e);
   Type ccxage_e = exp(log_ccxage_e);
-  prior -= ktools::pc_prec(ccxage_e, sd_ccxage(0), sd_ccxage(1));
-  prior -= ktools::constraint2D_singleton(ccxage.data(), singlesvy, age_rw2.size(), cc_vec.size());
-  prior += density::GMRF(ktools::prepare_Q(R_ccxage, ccxage_e))(ccxage);
-  prior += (R_ccxage_rank - ccxage.size()) * log(sqrt(2*M_PI)); // ktools::GMRF would be nice
+  dll -= ktools::pc_logprec(log_ccxage_e, pc_interx[0], pc_interx[1]);
+  dll -= ktools::constraint2D_singleton(ccxage.data(), singlesvy, age_rw2.size(), cc_vec.size(), true, true, true, false);
+  Eigen::SparseMatrix<Type> Qccxage = make_ok(R_ccxage, ccxage_e);
+  dll += density::GMRF(Qccxage)(ccxage);
 
   // Data likelihood
   for (int i = 0; i < afs.size(); i++) {
@@ -141,7 +136,6 @@ Type objective_function<Type>::operator() ()
       dll -= log(svw(i) * ktools::St_llogisI(afs(i), alpha_vec(cc_id(i)), lambda, a_vec(cc_id(i))));
     }
   }
-  dll += prior;
   // Reporting
   int nC = cc_vec.size(), nT = yob_rw2.size(), nA = age_rw2.size();
   vector<Type> rdims(3), median(nC * nT * nA), lambdas(nC * nT * nA);
