@@ -80,13 +80,6 @@ Type objective_function<Type>::operator() ()
   // Skewness real
   vector<Type> a_vec = exp(a_vec_star - 1.1*log_alpha_vec);
 
-  // yob rw2
-  PARAMETER_VECTOR (yob_rw2);
-  PARAMETER        (log_yob_rw2_e);
-  Type yob_rw2_e = exp(log_yob_rw2_e);
-  prior -= ktools::pc_prec(yob_rw2_e, sd_yob(0), sd_yob(1));
-  prior += ktools::rw(yob_rw2, R_yob, yob_rw2_e, yob_order);
-
   // age rw2
   PARAMETER_VECTOR (age_rw2);
   PARAMETER        (log_age_rw2_e);
