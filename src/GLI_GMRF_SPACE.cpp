@@ -112,6 +112,7 @@ Type objective_function<Type>::operator() ()
   dll -= ktools::constraint2D(ccxyob_array.data(), yob_rw2.size(), cc_vec.size(), true, false, false, false);
 	density::ARk_t<Type> ARx(phi_interx);
   dll += SEPARABLE(density::GMRF(Qcc), ARx)(ccxyob_array);
+  vector<Type> ccxyob = ccxyob_array.vec();
 
   // countries x age interaction
   PARAMETER_VECTOR  (ccxage);
