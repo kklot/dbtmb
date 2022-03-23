@@ -113,6 +113,8 @@ Type objective_function<Type>::operator() ()
 	density::ARk_t<Type> ARx(phi_interx);
   dll += SEPARABLE(density::GMRF(Qcc), ARx)(ccxyob_array);
   vector<Type> ccxyob = ccxyob_array.vec();
+  // normalizing constants for AR2 proccess
+	dll -= (-0.5 * log(2 * PI) + 0.5 * ARx.logdetQ0 - (yob_rw2.size() - 2) * log(ARx.sigma));
 
   // countries x age interaction
   PARAMETER_VECTOR  (ccxage);
