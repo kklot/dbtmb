@@ -1,6 +1,23 @@
 #include <TMB.hpp>
 #include "ktools.hpp"
 
+// https://en.wikipedia.org/wiki/Partial_autocorrelation_function
+template <class Type>
+vector<Type> to_phi(vector<Type> thetas)
+{ // order 2
+  vector<Type> psi(2), phi(2);
+  psi[0] = 2. * exp(thetas[0]) / (1. + exp(thetas[0])) - 1.;
+  psi[1] = 2. * exp(thetas[1]) / (1. + exp(thetas[1])) - 1.;
+  phi[1] = psi[1];
+  phi[0] = psi[0] * (1.0 - phi[1]);
+  // https://github.com/kaskr/adcomp/issues/360#issuecomment-1073667612
+  if (phi[1] == -1) // this should not happen sample from MVN and transformation
+    phi[1] += FLT_EPSILON;
+  if (phi[1] == 1 - abs(phi[0])) // this might happen
+    phi[1] -= DBL_EPSILON;
+  return phi;
+}
+
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
@@ -76,6 +93,19 @@ Type objective_function<Type>::operator() ()
   Type age_rw2_e = exp(log_age_rw2_e);
   prior -= ktools::pc_prec(age_rw2_e, sd_age(0), sd_age(1));
   prior += ktools::rw(age_rw2, R_age, age_rw2_e, age_order);
+  // yob ARk
+  // - hyper
+  PARAMETER_VECTOR(pacf_vec); // * theta * //
+  matrix<Type> Sigma(2,2);
+  Sigma.fill(0);
+  Sigma(0, 0) = Type(1); // TODO: fix upstream in TMB examples
+  Sigma(1, 1) = Type(1);
+  dll += density::MVNORM(Sigma)(pacf_vec);
+  vector<Type> phi_yob = to_phi(pacf_vec);
+  // - main params
+  PARAMETER_VECTOR(yob_rw2);
+  dll += density::ARk(phi_yob)(yob_rw2);
+  dll -= ktools::soft_zero_sum(yob_rw2);
 
   // countries spatial
   PARAMETER_VECTOR  (cc_vec);
